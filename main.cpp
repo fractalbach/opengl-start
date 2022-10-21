@@ -1,24 +1,27 @@
 #include <glad/glad.h> // Must be included before GLFW
 
 #include <GLFW/glfw3.h>
+#include <fstream>
 #include <iostream>
+#include <sstream>
+#include <string>
 
 // =====================================================================================================================
 
-// simple triangle defined in Normalized Device Coordinates (NDC)
 const float vertices[] = {
     -0.5f, -0.5f, 0.0f, // vertex 1
     0.5f,  -0.5f, 0.0f, // vertex 2
     0.0f,  0.5f,  0.0f  // vertex 3
 };
 
-// Source code of a simple vertex shader, but stored directly in the program as a C-string
-const char *vertexShaderSource = "#version 330 core\n"
-                                 "layout (location = 0) in vec3 aPos;\n"
-                                 "void main()\n"
-                                 "{\n"
-                                 "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-                                 "}\0";
+const std::string file_to_string(std::string filename) {
+  std::ifstream t(filename);
+  std::stringstream buffer;
+  buffer << t.rdbuf();
+  return buffer.str();
+}
+
+const char *vertexShaderSource = file_to_string("shaders/simple.vert").c_str();
 
 // =====================================================================================================================
 
@@ -57,6 +60,8 @@ void load_and_compile_vertex_shader() {
   if (!success) {
     glGetShaderInfoLog(vertexShader, 512, NULL, infoLog); // provides useful compile-time error information
     std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+  } else {
+    std::cout << "Loaded Shader" << std::endl;
   }
 }
 
@@ -105,3 +110,6 @@ int main() {
   glfwTerminate(); // free resources from GLFW
   return 0;
 }
+
+// =====================================================================================================================
+
