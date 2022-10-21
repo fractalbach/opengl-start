@@ -21,10 +21,6 @@ const std::string file_to_string(std::string filename) {
   return buffer.str();
 }
 
-const char *vertexShaderSource = file_to_string("shaders/simple.vert").c_str();
-
-// =====================================================================================================================
-
 // Updates the size of the GL viewport to the current size of the window. Call whenever the window size changes.
 void framebuffer_size_callback(GLFWwindow *window, int width, int height) { glViewport(0, 0, width, height); }
 
@@ -34,34 +30,23 @@ void processInput(GLFWwindow *window) {
     glfwSetWindowShouldClose(window, true);
 }
 
-void process_render_commands(GLFWwindow *window) {
-  glClearColor(0.2f, 0.3f, 0.3f, 1.0f); // specify color to fill the screen with
-  glClear(GL_COLOR_BUFFER_BIT);         // clears entire framebuffer, fills with desired color
-}
-
-// Creates and Loads a GL-buffer to hold vertex data for a simple triangle
-void load_triangle() {
-  unsigned int VBO;                   // id for a Vertex Buffer Object (VBO)
-  glGenBuffers(1, &VBO);              // generate a openGL buffer object, and save the ID
-  glBindBuffer(GL_ARRAY_BUFFER, VBO); // binds buffer so that it becomes the "current buffer" to modify
-  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // copy user data to current buffer
-}
-
-// Loads and Compiles a simple Vertex Shader
-void load_and_compile_vertex_shader() {
-  unsigned int vertexShader;
-  vertexShader = glCreateShader(GL_VERTEX_SHADER);            // create an empty shader object and save the ID
-  glShaderSource(vertexShader, 1, &vertexShaderSource, NULL); // loads the shader source code
-  glCompileShader(vertexShader);                              // dynamically compiles the shader source code
-
+void check_for_shader_errors(unsigned int shader_id) {
   int success;
   char infoLog[512];
-  glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success); // check for any errors in our shader compilation
+  glGetShaderiv(shader_id, GL_COMPILE_STATUS, &success); // check for any errors in our shader compilation
   if (!success) {
-    glGetShaderInfoLog(vertexShader, 512, NULL, infoLog); // provides useful compile-time error information
-    std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-  } else {
-    std::cout << "Loaded Shader" << std::endl;
+    glGetShaderInfoLog(shader_id, 512, NULL, infoLog); // provides useful compile-time error information
+    std::cout << "ERROR::SHADER::COMPILATION_FAILED\n" << infoLog << std::endl;
+  }
+}
+
+void check_for_shader_program_errors(unsigned int shader_program_id) {
+  int success;
+  char infoLog[512];
+  glGetProgramiv(shader_program_id, GL_LINK_STATUS, &success);
+  if (!success) {
+    glGetProgramInfoLog(shader_program_id, 512, NULL, infoLog);
+    std::cout << "ERROR::SHADER_PROGRAM::\n" << infoLog << std::endl;
   }
 }
 
@@ -95,16 +80,60 @@ int main() {
   // Tell GLFW to resize the GL viewport whenever we resize the window.
   glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-  // prepare buffers for vertices, compile and load shaders, and other stuff
-  load_triangle();
-  load_and_compile_vertex_shader();
+  // Load shader programs from files
+  const std::string s1 = file_to_string("../shaders/simple.vert");
+  const std::string s2 = file_to_string("../shaders/simple.frag");
+  const char *vertex_shader_source = s1.c_str();
+  const char *fragment_shader_source = s2.c_str();
+
+  // Load Vertex Shader
+  unsigned int vertex_shader;
+  vertex_shader = glCreateShader(GL_VERTEX_SHADER);              // create an empty shader object and save the ID
+  glShaderSource(vertex_shader, 1, &vertex_shader_source, NULL); // loads the shader source code
+  glCompileShader(vertex_shader);                                // dynamically compiles the shader source code
+  check_for_shader_errors(vertex_shader);
+
+  // Load Fragment Shader
+  unsigned int fragment_shader;
+  fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+  glShaderSource(fragment_shader, 1, &fragment_shader_source, NULL);
+  glCompileShader(fragment_shader);
+  check_for_shader_errors(fragment_shader);
+
+  // Combine the vertex and fragment shaders into a "shader program"
+  unsigned int shader_program = glCreateProgram();
+  glAttachShader(shader_program, vertex_shader);
+  glAttachShader(shader_program, fragment_shader);
+  glLinkProgram(shader_program);
+  check_for_shader_program_errors(shader_program);
+  glDeleteShader(vertex_shader); // we can free these objects since we have finished linking to "shader program
+  glDeleteShader(fragment_shader);
+
+  // Handle Vertices
+  unsigned int VAO, VBO;
+  glGenVertexArrays(1, &VAO);
+  glGenBuffers(1, &VBO);              // generate a openGL buffer object, and save the ID
+  glBindVertexArray(VAO);             // 1. bind Vertex Array Object
+  glBindBuffer(GL_ARRAY_BUFFER, VBO); // 2. copy vert array into a buffer
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // 3. set vertex attributes pointers
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+  glEnableVertexAttribArray(0);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindVertexArray(0);
 
   // The Render Loop.
   while (!glfwWindowShouldClose(window)) {
-    processInput(window);            // check and handle user input
-    process_render_commands(window); // drawing on the screen happens here
-    glfwPollEvents();                // checks for events and calls handlers
-    glfwSwapBuffers(window);         // double buffering
+    processInput(window); // check and handle user input
+
+    glClearColor(0.2f, 0.3f, 0.3f, 1.0f); // specify color to fill the screen with
+    glClear(GL_COLOR_BUFFER_BIT);         // clears entire framebuffer, fills with desired color
+
+    glUseProgram(shader_program);
+    glBindVertexArray(VAO);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+
+    glfwPollEvents();        // checks for events and calls handlers
+    glfwSwapBuffers(window); // double buffering
   }
 
   glfwTerminate(); // free resources from GLFW
@@ -112,4 +141,3 @@ int main() {
 }
 
 // =====================================================================================================================
-
