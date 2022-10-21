@@ -4,16 +4,6 @@
 
 #include <iostream>
 
-// updates the size of the GL viewport to the current size of the window. Call
-// this function whenever the window size changes.
-void framebuffer_size_callback(GLFWwindow *window, int width, int height) { glViewport(0, 0, width, height); }
-
-// Handle Keypresses, mouseclicks, and other forms of direct input from the user.
-void processInput(GLFWwindow *window) {
-  if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-    glfwSetWindowShouldClose(window, true);
-}
-
 int main() {
   // instantiate the GLFW window
   glfwInit();
@@ -53,4 +43,14 @@ int main() {
 
   glfwTerminate(); // free resources from GLFW
   return 0;
+}
+
+// updates the size of the GL viewport to the current size of the window. Call
+// this function whenever the window size changes.
+void framebuffer_size_callback(GLFWwindow *window, int width, int height) { glViewport(0, 0, width, height); }
+
+// Handle Keypresses, mouseclicks, and other forms of direct input from the user.
+void processInput(GLFWwindow *window) {
+  if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+    glfwSetWindowShouldClose(window, true);
 }
