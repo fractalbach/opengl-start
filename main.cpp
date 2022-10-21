@@ -8,6 +8,12 @@
 // this function whenever the window size changes.
 void framebuffer_size_callback(GLFWwindow *window, int width, int height) { glViewport(0, 0, width, height); }
 
+// Handle Keypresses, mouseclicks, and other forms of direct input from the user.
+void processInput(GLFWwindow *window) {
+  if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+    glfwSetWindowShouldClose(window, true);
+}
+
 int main() {
   // instantiate the GLFW window
   glfwInit();
@@ -38,8 +44,11 @@ int main() {
 
   // The Render Loop.
   while (!glfwWindowShouldClose(window)) {
-    glfwSwapBuffers(window);
-    glfwPollEvents();
+    processInput(window);                 // check and handle user input
+    glClearColor(0.2f, 0.3f, 0.3f, 1.0f); // specify color to fill the screen with
+    glClear(GL_COLOR_BUFFER_BIT);         // clears entire framebuffer, fills with desired color
+    glfwPollEvents();                     // checks for events and calls handlers
+    glfwSwapBuffers(window);              // double buffering
   }
 
   glfwTerminate(); // free resources from GLFW
