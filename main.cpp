@@ -1,8 +1,66 @@
-#include <glad/glad.h>
+#include <glad/glad.h> // Must be included before GLFW
 
 #include <GLFW/glfw3.h>
-
 #include <iostream>
+
+// =====================================================================================================================
+
+// simple triangle defined in Normalized Device Coordinates (NDC)
+const float vertices[] = {
+    -0.5f, -0.5f, 0.0f, // vertex 1
+    0.5f,  -0.5f, 0.0f, // vertex 2
+    0.0f,  0.5f,  0.0f  // vertex 3
+};
+
+// Source code of a simple vertex shader, but stored directly in the program as a C-string
+const char *vertexShaderSource = "#version 330 core\n"
+                                 "layout (location = 0) in vec3 aPos;\n"
+                                 "void main()\n"
+                                 "{\n"
+                                 "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+                                 "}\0";
+
+// =====================================================================================================================
+
+// Updates the size of the GL viewport to the current size of the window. Call whenever the window size changes.
+void framebuffer_size_callback(GLFWwindow *window, int width, int height) { glViewport(0, 0, width, height); }
+
+// Handle Keypresses, mouseclicks, and other forms of direct input from the user.
+void processInput(GLFWwindow *window) {
+  if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+    glfwSetWindowShouldClose(window, true);
+}
+
+void process_render_commands(GLFWwindow *window) {
+  glClearColor(0.2f, 0.3f, 0.3f, 1.0f); // specify color to fill the screen with
+  glClear(GL_COLOR_BUFFER_BIT);         // clears entire framebuffer, fills with desired color
+}
+
+// Creates and Loads a GL-buffer to hold vertex data for a simple triangle
+void load_triangle() {
+  unsigned int VBO;                   // id for a Vertex Buffer Object (VBO)
+  glGenBuffers(1, &VBO);              // generate a openGL buffer object, and save the ID
+  glBindBuffer(GL_ARRAY_BUFFER, VBO); // binds buffer so that it becomes the "current buffer" to modify
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // copy user data to current buffer
+}
+
+// Loads and Compiles a simple Vertex Shader
+void load_and_compile_vertex_shader() {
+  unsigned int vertexShader;
+  vertexShader = glCreateShader(GL_VERTEX_SHADER);            // create an empty shader object and save the ID
+  glShaderSource(vertexShader, 1, &vertexShaderSource, NULL); // loads the shader source code
+  glCompileShader(vertexShader);                              // dynamically compiles the shader source code
+
+  int success;
+  char infoLog[512];
+  glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success); // check for any errors in our shader compilation
+  if (!success) {
+    glGetShaderInfoLog(vertexShader, 512, NULL, infoLog); // provides useful compile-time error information
+    std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+  }
+}
+
+// =====================================================================================================================
 
 int main() {
   // instantiate the GLFW window
@@ -32,25 +90,18 @@ int main() {
   // Tell GLFW to resize the GL viewport whenever we resize the window.
   glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
+  // prepare buffers for vertices, compile and load shaders, and other stuff
+  load_triangle();
+  load_and_compile_vertex_shader();
+
   // The Render Loop.
   while (!glfwWindowShouldClose(window)) {
-    processInput(window);                 // check and handle user input
-    glClearColor(0.2f, 0.3f, 0.3f, 1.0f); // specify color to fill the screen with
-    glClear(GL_COLOR_BUFFER_BIT);         // clears entire framebuffer, fills with desired color
-    glfwPollEvents();                     // checks for events and calls handlers
-    glfwSwapBuffers(window);              // double buffering
+    processInput(window);            // check and handle user input
+    process_render_commands(window); // drawing on the screen happens here
+    glfwPollEvents();                // checks for events and calls handlers
+    glfwSwapBuffers(window);         // double buffering
   }
 
   glfwTerminate(); // free resources from GLFW
   return 0;
-}
-
-// updates the size of the GL viewport to the current size of the window. Call
-// this function whenever the window size changes.
-void framebuffer_size_callback(GLFWwindow *window, int width, int height) { glViewport(0, 0, width, height); }
-
-// Handle Keypresses, mouseclicks, and other forms of direct input from the user.
-void processInput(GLFWwindow *window) {
-  if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-    glfwSetWindowShouldClose(window, true);
 }
