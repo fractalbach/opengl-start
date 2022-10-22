@@ -4,8 +4,7 @@ Experiments with OpenGL!
 
 # Development (Linux)
 
-This is how I set up things for development. To automatically do all of the
-steps that are outlined below, you can use the `install` the script:
+To automatically install, use the `install` script,
 
 ```bash
 ./install
