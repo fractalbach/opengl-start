@@ -8,6 +8,14 @@
 
 // =====================================================================================================================
 
+#include "build/shaders/simple.frag.hex"  
+#include "build/shaders/simple.vert.hex"
+
+const char *SHADER_SOURCE_FRAG = (const char*)shaders_simple_frag;
+const char *SHADER_SOURCE_VERT = (const char*)shaders_simple_vert;
+
+// =====================================================================================================================
+
 const float vertices[] = {
     -0.5f, -0.5f, 0.0f, // vertex 1
     0.5f,  -0.5f, 0.0f, // vertex 2
@@ -80,23 +88,17 @@ int main() {
   // Tell GLFW to resize the GL viewport whenever we resize the window.
   glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-  // Load shader programs from files
-  const std::string s1 = file_to_string("../shaders/simple.vert");
-  const std::string s2 = file_to_string("../shaders/simple.frag");
-  const char *vertex_shader_source = s1.c_str();
-  const char *fragment_shader_source = s2.c_str();
-
   // Load Vertex Shader
   unsigned int vertex_shader;
   vertex_shader = glCreateShader(GL_VERTEX_SHADER);              // create an empty shader object and save the ID
-  glShaderSource(vertex_shader, 1, &vertex_shader_source, NULL); // loads the shader source code
+  glShaderSource(vertex_shader, 1, &SHADER_SOURCE_VERT, NULL); // loads the shader source code
   glCompileShader(vertex_shader);                                // dynamically compiles the shader source code
   check_for_shader_errors(vertex_shader);
 
   // Load Fragment Shader
   unsigned int fragment_shader;
   fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-  glShaderSource(fragment_shader, 1, &fragment_shader_source, NULL);
+  glShaderSource(fragment_shader, 1, &SHADER_SOURCE_FRAG, NULL);
   glCompileShader(fragment_shader);
   check_for_shader_errors(fragment_shader);
 
