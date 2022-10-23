@@ -1,22 +1,16 @@
 #!/usr/bin/env bash
 
-# Install Conan
-pip install conan
-
-# Create Conan Profile Settings. The package_manger configurations seem to be
-# needed in order to install GLFW dependencies
-conan profile new default --detect
-conan profile update settings.compiler.libcxx=libstdc++11 default
-conan profile update conf.tools.system.package_manager:mode=enabled default
-conan profile update conf.tools.system.package_manager:sudo=True default
+# Installs Conan if it hasn't already been installed
+command -v conan >/dev/null 2>&1 || pip install conan
 
 # The exported variables also seem to be needed in order to install GLFW
 export CONAN_SYSREQUIRES_MODE="enabled"
 export CONAN_SYSREQUIRES_SUDO="1"
 
 # Finally, we can install and build. Generated files go into "build" directory.
+rm -rf build
 mkdir build
 cd build
-conan install ..
-cmake .. -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release
+conan install .. -pr="../conan_profiles/linux" --build=missing
+cmake ..
 cmake --build . 
