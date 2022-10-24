@@ -8,18 +8,32 @@
 
 // =====================================================================================================================
 
-#include "build/shaders/simple.frag.hex"  
+#include "build/shaders/simple.frag.hex"
 #include "build/shaders/simple.vert.hex"
 
-const char *SHADER_SOURCE_FRAG = (const char*)shaders_simple_frag;
-const char *SHADER_SOURCE_VERT = (const char*)shaders_simple_vert;
+const char *SHADER_SOURCE_FRAG = (const char *)shaders_simple_frag;
+const char *SHADER_SOURCE_VERT = (const char *)shaders_simple_vert;
 
 // =====================================================================================================================
 
-const float vertices[] = {
-    -0.5f, -0.5f, 0.0f, // vertex 1
-    0.5f,  -0.5f, 0.0f, // vertex 2
-    0.0f,  0.5f,  0.0f  // vertex 3
+// TRIANGLE
+// const float vertices[] = {
+//     -0.5f, -0.5f, 0.0f, // vertex 1
+//     0.5f,  -0.5f, 0.0f, // vertex 2
+//     0.0f,  0.5f,  0.0f  // vertex 3
+// };
+
+// RECTANGLE
+float vertices[] = {
+    0.5f,  0.5f,  0.0f, // top right
+    0.5f,  -0.5f, 0.0f, // bottom right
+    -0.5f, -0.5f, 0.0f, // bottom left
+    -0.5f, 0.5f,  0.0f  // top left
+};
+unsigned int indices[] = {
+    // note that we start from 0!
+    0, 1, 3, // first triangle
+    1, 2, 3  // second triangle
 };
 
 const std::string file_to_string(std::string filename) {
@@ -90,9 +104,9 @@ int main() {
 
   // Load Vertex Shader
   unsigned int vertex_shader;
-  vertex_shader = glCreateShader(GL_VERTEX_SHADER);              // create an empty shader object and save the ID
+  vertex_shader = glCreateShader(GL_VERTEX_SHADER);            // create an empty shader object and save the ID
   glShaderSource(vertex_shader, 1, &SHADER_SOURCE_VERT, NULL); // loads the shader source code
-  glCompileShader(vertex_shader);                                // dynamically compiles the shader source code
+  glCompileShader(vertex_shader);                              // dynamically compiles the shader source code
   check_for_shader_errors(vertex_shader);
 
   // Load Fragment Shader
@@ -111,19 +125,36 @@ int main() {
   glDeleteShader(vertex_shader); // we can free these objects since we have finished linking to "shader program
   glDeleteShader(fragment_shader);
 
-  // Handle Vertices
-  unsigned int VAO, VBO;
+  // ---------------------------------------------------------------------------
+  // Vertex Handling
+  // ---------------------------------------------------------------------------
+
+  unsigned int VAO, VBO, EBO;
   glGenVertexArrays(1, &VAO);
-  glGenBuffers(1, &VBO);              // generate a openGL buffer object, and save the ID
-  glBindVertexArray(VAO);             // 1. bind Vertex Array Object
-  glBindBuffer(GL_ARRAY_BUFFER, VBO); // 2. copy vert array into a buffer
-  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // 3. set vertex attributes pointers
+  glGenBuffers(1, &VBO);
+  glGenBuffers(1, &EBO);
+
+  // 1. bind Vertex Array Object
+  glBindVertexArray(VAO);
+
+  // 2. copy our vertices array in a vertex buffer for OpenGL to use
+  glBindBuffer(GL_ARRAY_BUFFER, VBO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+  // 3. copy our index array in a element buffer for OpenGL to use
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+  // 4. then set the vertex attributes pointers
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
   glEnableVertexAttribArray(0);
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
-  glBindVertexArray(0);
 
+  // Enable Wireframe Mode
+  // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+  // ---------------------------------------------------------------------------
   // The Render Loop.
+  // ---------------------------------------------------------------------------
   while (!glfwWindowShouldClose(window)) {
     processInput(window); // check and handle user input
 
@@ -131,8 +162,14 @@ int main() {
     glClear(GL_COLOR_BUFFER_BIT);         // clears entire framebuffer, fills with desired color
 
     glUseProgram(shader_program);
-    glBindVertexArray(VAO);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+
+    // The Triangle
+    // glBindVertexArray(VAO);
+    // glDrawArrays(GL_TRIANGLES, 0, 3);
+
+    // The Rectangle
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
     glfwPollEvents();        // checks for events and calls handlers
     glfwSwapBuffers(window); // double buffering
